@@ -51,6 +51,6 @@ pids
 *.pid
 *.seed
 *.pid.lock
-
+userdashboard-a52a6-firebase-adminsdk-appop-bac16d3bf5.json
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
