@@ -2,9 +2,10 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { signUp } from "../../firebase/authFunctions";
 import { useRouter } from "next/navigation";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const Signin: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -12,7 +13,18 @@ const Signin: React.FC = () => {
     const [password, setPassword] = useState<string>("");
     const [error, setError] = useState<string>("");
     const router = useRouter();
-
+    useEffect(() => {
+        const auth = getAuth();
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                const username = currentUser.email?.split("@")[0];
+                if (username) {
+                    router.replace(`/dashboard/${username}`);
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
     const handleRedirect = () => {
         router.push("/login");
     };
