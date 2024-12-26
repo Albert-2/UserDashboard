@@ -52,7 +52,7 @@ const Login: React.FC = () => {
             const username = email.split("@")[0];
             dispatch(setUser({ email, username }));
             router.push(`/dashboard/${username}`);
-        } catch (err: any) {
+        } catch {
             dispatch(setError("Failed to log in. Please try again."));
         } finally {
             dispatch(setLoading(false));
@@ -64,7 +64,7 @@ const Login: React.FC = () => {
     };
 
     if (user) {
-        return null; 
+        return null;
     }
 
     return (
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
                     <div className="text-center">
                         <h1 className="block text-2xl font-bold text-gray-800">Log in</h1>
                         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            Don't have an account yet?{" "}
+                            Don not have an account yet?
                             <span
                                 onClick={handleRedirectToSignup}
                                 className="text-blue-600 decoration-2 font-medium cursor-pointer"

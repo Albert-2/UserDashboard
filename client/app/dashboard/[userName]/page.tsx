@@ -27,8 +27,12 @@ const UserDashboard = () => {
                 router.push("/login");
             } else {
                 const email = currentUser.email || "";
-                setEmail(email);
                 const defaultUsername = email.split("@")[0];
+                if (userName !== defaultUsername) {
+                    router.push(`/dashboard/${defaultUsername}`);
+                    return;
+                }
+                setEmail(email);
                 setUsername(defaultUsername);
                 const token = await currentUser.getIdToken();
                 setIdToken(token);
@@ -37,7 +41,7 @@ const UserDashboard = () => {
         });
 
         return () => unsubscribe();
-    }, [router]);
+    }, [router, userName]);
 
     const handleLogout = async () => {
         try {
@@ -80,8 +84,9 @@ const UserDashboard = () => {
 
     const handleProfileUpdate = async () => {
         try {
-            const response = await fetch("http://localhost:5000/auth/update-profile", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/update-profile`, {
                 method: "PUT",
+                credentials: 'include',
                 headers: {
                     "Content-Type": "application/json",
                 },

@@ -10,6 +10,7 @@ import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../redux/store";
 import { setUser, setError, setLoading } from "../redux/authSlice";
+import { FirebaseError } from "firebase/app";
 
 const Signin: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -74,14 +75,19 @@ const Signin: React.FC = () => {
 
             dispatch(setUser({ email, username }));
             router.push(`/dashboard/${username}`);
-        } catch (err: any) {
-            if (err.code === "auth/email-already-in-use") {
-                setError("This email is already in use. Please use a different one.");
-            } else if (err.code === "auth/weak-password") {
-                setError("Password should be at least 6 characters.");
-            } else if (err.code === "auth/invalid-email") {
-                setError("Please enter a valid email address.");
-            } else {
+        } catch (err: unknown) {
+            if (err instanceof FirebaseError) {
+                if (err.code === "auth/email-already-in-use") {
+                    setError("This email is already in use. Please use a different one.");
+                } else if (err.code === "auth/weak-password") {
+                    setError("Password should be at least 6 characters.");
+                } else if (err.code === "auth/invalid-email") {
+                    setError("Please enter a valid email address.");
+                } else {
+                    setError("An unexpected error occurred. Please try again.");
+                }
+            }
+            else {
                 setError("An unexpected error occurred. Please try again.");
             }
         } finally {

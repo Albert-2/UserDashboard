@@ -1,8 +1,5 @@
 import * as admin from 'firebase-admin';
 import { Injectable } from '@nestjs/common';
-import * as serviceAccount from "../config/serviceAccountKey.json"
-import { getFirestore, doc, getDoc,updateDoc } from 'firebase/firestore';
-import { FirebaseApp, initializeApp } from 'firebase/app';
 import * as firebase from 'firebase-admin';
 
 @Injectable()
@@ -13,11 +10,12 @@ export class FirebaseService {
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert({
-          projectId: serviceAccount.project_id,
-          privateKey: serviceAccount.private_key.replace(/\\n/g, '\n'), 
-          clientEmail: serviceAccount.client_email,
+          projectId: process.env.PROJECT_ID,
+          privateKey: process.env.PRIVATE_KEY.replace(/\\n/g, '\n'), 
+          clientEmail: process.env
+          .CLIENT_EMAIL,
         }),
-        storageBucket: serviceAccount.storageBucket, 
+        storageBucket: process.env.STORAGE_BUCKET, 
       });
     }
     this.db = firebase.firestore();
