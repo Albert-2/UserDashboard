@@ -6,6 +6,8 @@ import { useDispatch } from "react-redux";
 import { logout as logoutAction } from "../../redux/authSlice";
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit } from "@fortawesome/free-solid-svg-icons";
 
 const UserDashboard = () => {
     const { userName } = useParams();
@@ -15,16 +17,21 @@ const UserDashboard = () => {
     const [file, setFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState<string>("");
     const [username, setUsername] = useState<string>("");
+    const [email, setEmail] = useState<string>("");
+    const [idToken, setIdToken] = useState<string>("");
 
     useEffect(() => {
         const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (!currentUser) {
                 router.push("/login");
             } else {
                 const email = currentUser.email || "";
+                setEmail(email);
                 const defaultUsername = email.split("@")[0];
                 setUsername(defaultUsername);
+                const token = await currentUser.getIdToken();
+                setIdToken(token);
                 setLoading(false);
             }
         });
@@ -54,7 +61,6 @@ const UserDashboard = () => {
         }
 
         try {
-            // Replace with actual file upload logic (e.g., Firebase, AWS S3, etc.)
             console.log("Uploading file:", file.name);
             setTimeout(() => {
                 setUploadStatus(`File "${file.name}" uploaded successfully!`);
@@ -66,8 +72,39 @@ const UserDashboard = () => {
         }
     };
 
-    const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setUsername(event.target.value);
+    const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setEmail(event.target.value);
+        const newUsername = event.target.value.split("@")[0];
+        setUsername(newUsername);
+    };
+
+    const handleProfileUpdate = async () => {
+        try {
+            const response = await fetch("http://localhost:5000/auth/update-profile", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    idToken,
+                    updateData: {
+                        email,
+                        username,
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update profile");
+            }
+
+            const data = await response.json();
+            console.log(data.message);
+            alert("Profile updated successfully!");
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            alert("Failed to update profile.");
+        }
     };
 
     if (loading) {
@@ -83,21 +120,37 @@ const UserDashboard = () => {
             <h1 className="text-3xl font-bold">Welcome, {userName}!</h1>
             <p className="mt-4 text-xl">This is your personalized dashboard.</p>
 
-            {/* Username Input */}
+            <div className="mt-8 w-full max-w-md">
+                <label className="block mb-2 text-lg font-medium">Email</label>
+                <div className="flex gap-2 border-2 rounded-md">
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={handleEmailChange}
+                        className="block w-full border rounded px-3 py-2 border-none"
+                    />
+                    <button
+                        onClick={handleProfileUpdate}
+                        className="mx-2"
+                    >
+                        <FontAwesomeIcon icon={faEdit} size="lg" />
+                    </button>
+                </div>
+            </div>
+
             <div className="mt-8 w-full max-w-md">
                 <label className="block mb-2 text-lg font-medium">Username</label>
                 <input
                     type="text"
                     value={username}
-                    onChange={handleUsernameChange}
-                    className="block w-full border rounded px-3 py-2"
+                    readOnly
+                    className="block w-full border rounded px-3 py-2 bg-gray-200"
                 />
                 <p className="mt-2 text-sm text-gray-600">
-                    By default, this is set to the first part of your email address.
+                    The username is automatically derived from the email address.
                 </p>
             </div>
 
-            {/* File Upload Section */}
             <div className="mt-8 w-full max-w-md">
                 <label className="block mb-2 text-lg font-medium">Upload a File</label>
                 <input
@@ -111,10 +164,11 @@ const UserDashboard = () => {
                 >
                     Upload File
                 </button>
-                {uploadStatus && <p className="mt-2 text-sm text-gray-600">{uploadStatus}</p>}
+                {uploadStatus && (
+                    <p className="mt-2 text-sm text-gray-600">{uploadStatus}</p>
+                )}
             </div>
 
-            {/* Logout Button */}
             <button
                 onClick={handleLogout}
                 className="mt-10 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700"

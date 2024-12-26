@@ -14,10 +14,10 @@ export class FirebaseService {
       admin.initializeApp({
         credential: admin.credential.cert({
           projectId: serviceAccount.project_id,
-          privateKey: serviceAccount.private_key.replace(/\\n/g, '\n'), // Ensure proper formatting
+          privateKey: serviceAccount.private_key.replace(/\\n/g, '\n'), 
           clientEmail: serviceAccount.client_email,
         }),
-        storageBucket: serviceAccount.storageBucket, // Ensure this is set in your JSON
+        storageBucket: serviceAccount.storageBucket, 
       });
     }
     this.db = firebase.firestore();
@@ -61,7 +61,6 @@ export class FirebaseService {
   // Firestore: Update User Profile
   async updateUserProfile(username: string, updateData: any) {
   try {
-    // Query the collection to find the user by username field
     const userRef = admin.firestore().collection('users').doc(username);
     await userRef.update(updateData.updateData);
     console.log(`User profile updated for ${username}`);

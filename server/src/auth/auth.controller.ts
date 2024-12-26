@@ -23,13 +23,11 @@ export class AuthController {
   @Post('profile')
   async getUserProfile(@Body('idToken') idToken: string) {
     try {
-      // Verify the ID Token
       const user = await this.firebaseService.verifyIdToken(idToken);
-      // Get user profile
       const profile = await this.firebaseService.getUserProfileByUsername(user.email.split('@')[0]);
       return profile;
     } catch (error) {
-      console.error('Error fetching user profile:', error);  // Log any errors that occur
+      console.error('Error fetching user profile:', error); 
       throw new Error('Unable to retrieve user profile');
     }
   }

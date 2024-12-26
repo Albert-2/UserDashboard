@@ -64,7 +64,7 @@ const Login: React.FC = () => {
     };
 
     if (user) {
-        return null; // Prevent rendering the login page while redirecting
+        return null; 
     }
 
     return (
