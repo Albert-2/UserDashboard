@@ -1,5 +1,5 @@
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword ,signOut} from "firebase/auth";
-import app from "./firebaseConfig";
+import {app} from "./firebaseConfig";
 
 const auth = getAuth(app);
 
@@ -18,6 +18,9 @@ export const signUp = async (email: string, password: string) => {
 export const login = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = await userCredential.user;
+    const idToken = await user.getIdToken();
+    console.log('ID Token:', idToken);
     return userCredential.user;
   } catch (error) {
     console.error("Login Error:", error);

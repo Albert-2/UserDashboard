@@ -6,12 +6,17 @@ import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { signUp } from "../../firebase/authFunctions";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../redux/store";
+import { setUser, setError, setLoading } from "../redux/authSlice";
 
 const Signin: React.FC = () => {
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [error, setError] = useState<string>("");
+    const dispatch = useDispatch();
+    const { user, error, loading } = useSelector((state: RootState) => state.auth);
     const router = useRouter();
     useEffect(() => {
         const auth = getAuth();
@@ -43,10 +48,31 @@ const Signin: React.FC = () => {
     const handleSignUp = async (e: FormEvent) => {
         e.preventDefault();
         setError("");
+        dispatch(setLoading(true));
 
         try {
             await signUp(email, password);
+            const db = getFirestore();
+
+            // Store user data in Firestore
             const username = email.split("@")[0];
+            await setDoc(doc(db, "users", username), {
+                email,
+                username,
+                createdAt: new Date(),
+            });
+            console.log("User data has been successfully added to Firestore.");
+
+            // Check if the document exists immediately after creating
+            const docRef = doc(db, "users", username);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                console.log("Document successfully added:", docSnap.data());
+            } else {
+                console.log("Document does not exist yet.");
+            }
+
+            dispatch(setUser({ email, username }));
             router.push(`/dashboard/${username}`);
         } catch (err: any) {
             if (err.code === "auth/email-already-in-use") {
@@ -58,9 +84,13 @@ const Signin: React.FC = () => {
             } else {
                 setError("An unexpected error occurred. Please try again.");
             }
+        } finally {
+            dispatch(setLoading(false));
         }
     };
-
+    if (user) {
+        return null;
+    }
     return (
         <div className="h-[85vh] flex items-center">
             <div className="bg-white sm:w-96 w-[80%] mx-auto rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
@@ -181,8 +211,9 @@ const Signin: React.FC = () => {
                                 <button
                                     type="submit"
                                     className="p-3 inline-flex justify-center items-center gap-x-2 font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                                    disabled={loading}
                                 >
-                                    Sign in
+                                    {loading ? "Signing in..." : "Sign in"}
                                 </button>
                             </div>
                         </form>

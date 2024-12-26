@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
-import app from "../firebase/firebaseConfig";
+import {app} from "../firebase/firebaseConfig";
 
 const auth = getAuth(app);
 
