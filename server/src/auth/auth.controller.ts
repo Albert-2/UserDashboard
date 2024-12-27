@@ -1,11 +1,17 @@
-import { Controller, Put,Post, Body, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Put,
+  Post,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly firebaseService: FirebaseService) {}
+  constructor(private readonly firebaseService: FirebaseService) { }
 
   // Route for file upload
   @Post('upload')
@@ -24,10 +30,10 @@ export class AuthController {
   async getUserProfile(@Body('idToken') idToken: string) {
     try {
       const user = await this.firebaseService.verifyIdToken(idToken);
-      const profile = await this.firebaseService.getUserProfileByUsername(user.email.split('@')[0]);
+      const profile = await this.firebaseService.getUserProfileByEmail(user.email);
       return profile;
     } catch (error) {
-      console.error('Error fetching user profile:', error); 
+      console.error('Error fetching user profile:', error);
       throw new Error('Unable to retrieve user profile');
     }
   }
@@ -38,9 +44,23 @@ export class AuthController {
     @Body('idToken') idToken: string,
     @Body() updateData: any
   ) {
-    const user = await this.firebaseService.verifyIdToken(idToken);
-    console.log(user);
-    await this.firebaseService.updateUserProfile(user.email.split("@")[0] , updateData);
-    return { message: 'Profile updated successfully' };
+    try {
+      const user = await this.firebaseService.verifyIdToken(idToken);
+
+      await this.firebaseService.updateUserProfileByEmail(user.email, updateData);
+
+      const updatedProfile = await this.firebaseService.getUserProfileByEmail(
+        user.email
+      );
+
+      return {
+        message: 'Profile updated successfully',
+        profile: updatedProfile,
+      };
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw new Error('Unable to update user profile');
+    }
   }
+
 }
