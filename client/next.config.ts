@@ -15,7 +15,17 @@ const nextConfig: NextConfig = {
         protocol: "https", hostname: "https://user-dashboard-woad-zeta.vercel.app", port: ""
       }
     ],
-  }
+  },async rewrites() {
+        return [
+          {
+            source: '/api/:path*',
+            destination: 'https://dashboard-server-kappa.vercel.app/:path*',
+          },
+          {
+            source: '/api/:path*',
+            destination: 'https://user-dashboard-woad-zeta.vercel.app/:path*',
+          },
+        ]
+      },
 };
-
 export default nextConfig;
