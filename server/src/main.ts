@@ -37,14 +37,6 @@ async function bootstrap() {
     next();
   });
 
-  // // Setup file upload middleware with Multer (limits file size to 10MB)
-  // app.use(
-  //   multer({
-  //     storage: multer.memoryStorage(),
-  //     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  //   }).single('file')
-  // );
-
   // Log incoming requests with additional details
   app.use((req, res, next) => {
     console.log(`Request received: [${req.method}] ${req.originalUrl} - IP: ${req.ip}`);

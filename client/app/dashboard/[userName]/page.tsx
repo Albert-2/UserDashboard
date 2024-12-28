@@ -14,8 +14,8 @@ const UserDashboard = () => {
     const router = useRouter();
     const dispatch = useDispatch();
     const [loading, setLoading] = useState<boolean>(true);
-    // const [file, setFile] = useState<File | null>(null);
-    // const [uploadStatus, setUploadStatus] = useState<string>("");
+    const [file, setFile] = useState<File | null>(null);
+    const [uploadStatus, setUploadStatus] = useState<string>("");
     const [username, setUsername] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [idToken, setIdToken] = useState<string>("");
@@ -23,6 +23,7 @@ const UserDashboard = () => {
     const [lastName, setLastName] = useState<string>("Doe");
     const [about, setAbout] = useState<string>("This is your bio. You can tell others about yourself here.");
     const [isEditing, setIsEditing] = useState<boolean>(false);
+    const [fileMetadata, setFileMetadata] = useState<{ fileName: string; fileId: string } | null>(null);
 
     useEffect(() => {
         const auth = getAuth();
@@ -43,6 +44,7 @@ const UserDashboard = () => {
                     const token = await currentUser.getIdToken();
                     setIdToken(token);
                     fetchUserDetails(email, token);
+                    fetchFileMetadata(token);
                 } catch (error) {
                     console.error("Error fetching ID token: ", error);
                 }
@@ -78,6 +80,29 @@ const UserDashboard = () => {
         }
     };
 
+    // Fetch file metadata (file name and file ID)
+    const fetchFileMetadata = async (token: string) => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/files/metadata`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ username: userName }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch file metadata");
+            }
+
+            const data = await response.json();
+            setFileMetadata({ fileName: data.fileName, fileId: data.fileId });
+        } catch (error) {
+            console.error("Error fetching file metadata:", error);
+        }
+    };
+
     const handleLogout = async () => {
         try {
             await logout();
@@ -88,27 +113,43 @@ const UserDashboard = () => {
         }
     };
 
-    // const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    //     const selectedFile = event.target.files ? event.target.files[0] : null;
-    //     setFile(selectedFile);
-    // };
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files ? event.target.files[0] : null;
+        setFile(selectedFile);
+    };
 
-    // const handleFileUpload = async () => {
-    //     if (!file) {
-    //         setUploadStatus("Please select a file to upload.");
-    //         return;
-    //     }
+    const handleFileUpload = async () => {
+        if (!file) {
+            setUploadStatus("Please select a file to upload.");
+            return;
+        }
 
-    //     try {
-    //         setTimeout(() => {
-    //             setUploadStatus(`File "${file.name}" uploaded successfully!`);
-    //             setFile(null);
-    //         }, 2000);
-    //     } catch (error) {
-    //         setUploadStatus("Failed to upload file.");
-    //         console.error("Upload error:", error);
-    //     }
-    // };
+        try {
+            setUploadStatus("Uploading file...");
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/files/upload`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${idToken}`,
+                },
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("File upload failed");
+            }
+
+            const data = await response.json();
+            setUploadStatus("File uploaded successfully");
+            setFile(null);
+        } catch (error) {
+            setUploadStatus("Failed to upload file.");
+            console.error("Upload error:", error);
+        }
+    };
 
     const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(event.target.value);
@@ -152,6 +193,33 @@ const UserDashboard = () => {
 
     const toggleEdit = () => {
         setIsEditing(!isEditing);
+    };
+
+    const handleFileDownload = async () => {
+        if (fileMetadata) {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/files/download`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${idToken}`,
+                    },
+                    body: JSON.stringify({ username: userName })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to download the file");
+                }
+
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = fileMetadata.fileName;
+                link.click();
+            } catch (error) {
+                console.error("Error downloading the file:", error);
+            }
+        }
     };
 
     if (loading) {
@@ -230,23 +298,38 @@ const UserDashboard = () => {
                     disabled={!isEditing}
                 />
             </div>
-            {/* <div className="mt-4 w-full max-w-md">
-                <label className="block mb-2 text-sm font-medium">Upload a File</label>
+
+            {/* File upload section */}
+            <div className="mt-4 w-full max-w-md flex items-center gap-4">
                 <input
                     type="file"
                     onChange={handleFileChange}
                     className="block w-full border rounded px-3 py-2"
+                    placeholder="Upload File"
                 />
                 <button
                     onClick={handleFileUpload}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                    className="w-2/5 p-2 bg-blue-500 text-white rounded hover:bg-blue-700"
                 >
                     Upload File
                 </button>
-                {uploadStatus && (
-                    <p className="mt-2 text-sm text-gray-600">{uploadStatus}</p>
-                )}
-            </div> */}
+            </div>
+            {uploadStatus && (
+                <p className="mt-2 text-sm text-gray-600">{uploadStatus}</p>
+            )}
+
+            {/* File metadata display */}
+            {fileMetadata && (
+                <div className="mt-4 w-full max-w-md flex items-center gap-4">
+                    <button
+                        onClick={handleFileDownload}
+                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                    >
+                        View/Download File
+                    </button>
+                    <p className="text-base">{fileMetadata.fileName}</p>
+                </div>
+            )}
 
             <div className="mt-8 flex gap-4">
                 {isEditing && (
