@@ -129,7 +129,7 @@ const UserDashboard = () => {
 
             const formData = new FormData();
             formData.append("file", file);
-
+            formData.append("username", username);
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/files/upload`, {
                 method: "POST",
                 headers: {
@@ -143,7 +143,11 @@ const UserDashboard = () => {
             }
 
             const data = await response.json();
+            setFileMetadata({ fileName: data.fileName, fileId: data.fileId });
             setUploadStatus("File uploaded successfully");
+            setTimeout(() => {
+                setUploadStatus("");
+            }, 3000);
             setFile(null);
         } catch (error) {
             setUploadStatus("Failed to upload file.");

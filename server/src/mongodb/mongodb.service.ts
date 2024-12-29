@@ -16,7 +16,7 @@ export class MongoDBService implements OnModuleInit, OnModuleDestroy {
     // Connect to MongoDB
     this.client = new MongoClient(uri);
     await this.client.connect();
-    this.db = this.client.db(); 
+    this.db = this.client.db();
     console.log('Connected to MongoDB');
 
     this.bucket = new GridFSBucket(this.db, {
@@ -58,5 +58,11 @@ export class MongoDBService implements OnModuleInit, OnModuleDestroy {
     const collection = this.db.collection('file_metadata');
     const fileMetadata = await collection.findOne({ username });
     return fileMetadata;
+  }
+
+  // Method to delete file metadata by username
+  async deleteFileMetadata(username: string): Promise<void> {
+    const collection = this.db.collection('file_metadata');
+    await collection.deleteOne({ 'username': username });
   }
 }
